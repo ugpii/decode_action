@@ -1,1716 +1,844 @@
-//Fri Jun 28 2024 09:05:56 GMT+0000 (Coordinated Universal Time)
+//Fri Jun 28 2024 10:22:15 GMT+0000 (Coordinated Universal Time)
 //Base:https://github.com/echo094/decode-js
 //Modify:https://github.com/smallfawn/decode_action
-const $ = new Env("顺丰速运"),
-  ckName = "sfsy_data",
-  userCookie = $.toObj($.isNode() ? process.env[ckName] : $.getdata(ckName)) || [];
-$.userIdx = 0;
-$.userList = [];
-$.notifyMsg = [];
-$.succCount = 0;
-const notify = $.isNode() ? require("./sendNotify") : "";
-$.is_debug = ($.isNode() ? process.env.IS_DEDUG : $.getdata("is_debug")) || "false";
-$.is_bee = ($.isNode() ? process.env.sfsy_bee : $.getdata("sfsy_bee")) || "false";
-$.is_account = ($.isNode() ? process.env.sliverkiss_account : $.getdata("sliverkiss_account")) || "false";
-$.unTaskList = ["完成连签7天", "参与积分活动", "每月累计寄件", "完成每月任务", "与好友微信分享会员福利", "DAILY_VIP_TASK_TYPE", "去新增一个收件偏好", "用行业模板寄件下单", "用积分兑任意礼品", "领任意生活特权福利", "设置你的顺丰ID"];
-async function main() {
-  if ($.userList.length > 5 && $.is_account == "false") {
-    return;
-  }
-  for (let _0x16bed4 of $.userList) {
-    try {
-      await _0x16bed4.refresh_cookie();
-      if (_0x16bed4.ckStatus) {
-        let {
-          usablePoint: _0x49b989
-        } = await _0x16bed4.queryUserInfo();
-        await _0x16bed4.superWelfare_receiveRedPacket();
-        await _0x16bed4.automaticSignFetchPackage();
-        await _0x16bed4.memberDay_index();
-        if ($.is_bee != "false") {
-          await _0x16bed4.bee_indexData();
-        }
-        await _0x16bed4.coupon_list();
-        let _0x3bac91 = await _0x16bed4.queryUserInfo();
-        $.succCount++;
-        DoubleLog("[" + _0x16bed4.userName + "] 积分+" + (_0x3bac91?.["usablePoint"] - 0 - _0x49b989 ?? 0) + "  蜂蜜+" + ($.beeHoney ?? 0));
-      } else {
-        DoubleLog("⛔️ 「" + (_0x16bed4.userName ?? "账号" + index) + "」签到失败, 用户需要去登录");
-      }
-    } catch (_0x4c5880) {
-      throw _0x4c5880;
-    }
-  }
-  $.title = "共" + $.userList.length + "个账号,成功" + $.succCount + "个,失败" + ($.userList.length - 0 - $.succCount) + "个";
-  await sendMsg($.notifyMsg.join("\n"), {
-    $media: $.avatar
-  });
-}
-const _0x5ee1f2 = {
-  token: "wwesldfs29aniversaryvdld29",
-  sysCode: "MCS-MIMP-CORE",
-  channel: "wxwd26mem1"
-};
-class UserInfo {
-  constructor(_0x1398b2) {
-    this.index = ++$.userIdx;
-    this.token = "" || _0x1398b2.token || _0x1398b2;
-    this.sfsyUrl = _0x1398b2.token;
-    this.userId = "" || _0x1398b2.userId;
-    this.deviceId = randomPattern("xxxxxxxx-xxxx-xxxx");
-    this.memberDay_black = false;
-    this.memberDay_redPacket_drewToday = false;
-    this.memberDay_redPacket_map = {};
-    this.userIdList = [];
-    this.userName = _0x1398b2.userName;
-    this.avatar = _0x1398b2.avatar;
-    this.ckStatus = true;
-    this.baseUrl = "";
-    this.headers = {};
-    this.fetch = async _0x453f87 => {
-      try {
-        if (typeof _0x453f87 === "string") {
-          _0x453f87 = {
-            url: _0x453f87
-          };
-        }
-        if (_0x453f87?.["url"]?.["startsWith"]("/") || _0x453f87?.["url"]?.["startsWith"](":")) {
-          _0x453f87.url = this.baseUrl + _0x453f87.url;
-        }
-        const _0x31991c = {
-          ..._0x453f87,
-          headers: _0x453f87.headers || this.headers,
-          url: _0x453f87.url
-        };
-        const _0x1f1611 = await Request(_0x31991c);
-        debug(_0x1f1611, _0x453f87?.["url"]?.["replace"](/\/+$/, "")["substring"](_0x453f87?.["url"]?.["lastIndexOf"]("/") + 1));
-        return _0x1f1611;
-      } catch (_0x18e12b) {
-        this.ckStatus = false;
-        $.log("[" + (this.userName || this.index) + "][ERROR] 请求发起失败!" + _0x18e12b + "\n");
-      }
+const _0x454ec0 = _0x427c74("永辉生活"),
+  _0x408278 = require("fs"),
+  _0xbc0ee4 = require("got"),
+  {
+    CookieJar: _0x3e25a4
+  } = require("tough-cookie"),
+  _0x43b4a6 = "yhsh",
+  _0x4031d7 = _0x43b4a6 + "Cookie.txt",
+  _0x5a1d0b = 20000,
+  _0x2ca80d = 3;
+const _0x14be7e = 1.01,
+  _0x3a423f = "yhsh",
+  _0x13f210 = "https://leafxcy.coding.net/api/user/leafxcy/project/validcode/shared-depot/validCode/git/blob/master/code.json",
+  _0x22a328 = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_1_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.49(0x18003127) NetType/WIFI Language/zh_CN miniProgram/wxc9cf7c95499ee604",
+  _0x3814f0 = "10.4.5.3",
+  _0x297eb2 = "9601",
+  _0x5b0990 = _0x297eb2,
+  _0x3bd5e2 = 2000,
+  _0x3989bb = 5;
+class _0x55ea0b {
+  constructor() {
+    this.index = _0x454ec0.userIdx++;
+    this.name = "";
+    this.valid = false;
+    const _0x33629c = {
+      limit: 0
     };
-  }
-  async refresh_cookie() {
-    try {
-      const _0x31094a = {
-        url: this.sfsyUrl,
-        type: "get",
-        resultType: "all",
-        followRedirect: false
-      };
-      let _0x3f5a16 = await this.fetch(_0x31094a),
-        _0x1bea50 = ObjectKeys2LowerCase(_0x3f5a16?.["headers"]),
-        _0x478f9f = getQueries(_0x1bea50.location);
-      debug(_0x478f9f);
-      if (_0x3f5a16.status != 302) {
-        throw "登录失败";
-      }
-      this.userName = _0x478f9f.mobile;
-      $.log("[" + (this.userName || this.index) + "][INFO] 登录成功");
-      return _0x478f9f;
-    } catch (_0x1868e4) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x1868e4 + "\n");
-    }
-  }
-  getSign(_0x1f30dc = _0x5ee1f2) {
-    let _0xca45f7 = Date.now(),
-      {
-        token: _0x11283d,
-        sysCode: _0x1966ab,
-        channel: _0x3a5f23
-      } = _0x1f30dc,
-      _0x333657 = "token=" + _0x11283d + "&timestamp=" + _0xca45f7 + "&sysCode=" + _0x1966ab,
-      _0x353638 = $.CryptoJS.MD5(_0x333657).toString($.CryptoJS.enc.Hex);
-    const _0x315559 = {
-      platform: "MINI_PROGRAM",
-      channel: _0x3a5f23,
-      sysCode: _0x1966ab,
-      timestamp: _0xca45f7,
-      signature: _0x353638
+    const _0xb8726f = {
+      Connection: "keep-alive"
     };
-    return _0x315559;
+    const _0x38bfa1 = {
+      retry: _0x33629c,
+      timeout: _0x5a1d0b,
+      followRedirect: false,
+      headers: _0xb8726f
+    };
+    this.got = _0xbc0ee4.extend(_0x38bfa1);
   }
-  async queryUserInfo() {
-    try {
-      const _0x241c0a = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberIntegral~userInfoService~queryUserInfo",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          sysCode: "ESG-CEMP-CORE",
-          optionalColumns: ["usablePoint", "cycleSub", "leavePoint"],
-          token: "zeTLTYeG0bLetfRk"
-        }
-      };
-      let _0x1256c3 = await this.fetch(_0x241c0a);
-      if (_0x1256c3.success) {
-        const {
-            usablePoint: _0x3d2df2,
-            cycleSub: _0xf1ccaa,
-            leavePoint: _0x2d8b77,
-            pointClearCycle: _0xb958b9
-          } = _0x1256c3.obj,
-          _0x3a7573 = this.userName || this.index;
-        let _0x57b12b = "[" + _0x3a7573 + "][INFO] 积分: " + _0x3d2df2;
-        const _0x47460e = _0x2d8b77 - _0xf1ccaa,
-          _0x4a1647 = new Date(_0xb958b9 + " 00:00:00");
-        _0x4a1647.setFullYear(_0x4a1647.getFullYear() + 1);
-        _0x47460e > 0 && _0x4a1647.getTime() > Date.now() && (_0x57b12b += ", 有" + _0x47460e + "积分将在" + _0x4a1647.toLocaleDateString("zh-CN") + "过期");
-        $.log(_0x57b12b);
-      }
-      return _0x1256c3.obj;
-    } catch (_0x5e2037) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x5e2037 + "\n");
+  get_prefix(_0x4166ea = {}) {
+    var _0x411b32 = "",
+      _0x5caca2 = _0x454ec0.userCount.toString().length;
+    if (this.index) {
+      _0x411b32 += "账号[" + _0x454ec0.padStr(this.index, _0x5caca2) + "]";
     }
-  }
-  async superWelfare_receiveRedPacket() {
-    try {
-      const _0x30b3c7 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberActLengthy~redPacketActivityService~superWelfare~receiveRedPacket",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          channel: "czflqdlhbxcx"
-        }
-      };
-      let _0x3397f9 = await this.fetch(_0x30b3c7);
-      if (_0x3397f9.success) {
-        let _0x11d053 = _0x3397f9.obj.giftList;
-        if (_0x3397f9.obj.extraGiftList?.["length"]) {
-          _0x11d053 = _0x11d053.concat(_0x3397f9.obj.extraGiftList);
-        }
-        const _0xf39a7e = _0x11d053.map(_0x51f3dc => _0x51f3dc.giftName).join(", "),
-          _0x143aa0 = _0x3397f9.obj.receiveStatus == 1 ? "领取成功" : "已领取过";
-        $.log("[" + (this.userName || this.index) + "][INFO] 超值福利签到[" + _0x143aa0 + "]: " + _0xf39a7e);
-      } else {
-        $.log("[" + (this.userName || this.index) + "][ERROR] 超值福利签到失败: " + (_0x3397f9.errorMessage || JSON.stringify(_0x3397f9) || "无返回"));
-      }
-    } catch (_0x1c0f12) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x1c0f12 + "\n");
+    if (this.name) {
+      _0x411b32 += "[" + this.name + "]";
     }
+    return _0x411b32;
   }
-  async automaticSignFetchPackage(_0x1a694a = {}) {
-    try {
-      const _0x14998e = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~integralTaskSignPlusService~automaticSignFetchPackage",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          comeFrom: _0x1a694a.comeFrom || "vioin",
-          channelFrom: _0x1a694a.channelFrom || "SFAPP"
-        }
-      };
-      let _0x538948 = await this.fetch(_0x14998e);
-      if (!_0x538948?.["success"]) {
-        throw new Error("查询签到失败: " + (_0x538948.errorMessage || JSON.stringify(_0x538948) || "无返回"));
-      }
-      if (_0x538948.obj.hasFinishSign) {
-        $.log("[" + (this.userName || this.index) + "][INFO] 今天已签到");
-      } else {
-        if (_0x538948.obj.integralTaskSignPackageVOList?.["length"]) {
-          const _0x3d58cb = _0x538948.obj.integralTaskSignPackageVOList.map(_0x887b20 => _0x887b20.packetName).join(", ");
-          $.log("[" + (this.userName || this.index) + "][INFO] 签到获得: " + _0x3d58cb);
-        }
-      }
-      await this.queryPointTaskAndSignFromES();
-      const _0x4f393e = {
-        channelType: 3
-      };
-      await this.queryPointTaskAndSignFromES(_0x4f393e);
-      await this.queryUserInfo();
-    } catch (_0x27bae3) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x27bae3 + "\n");
-    }
+  log(_0x322169, _0x1bb66a = {}) {
+    let _0x232f8a = this.get_prefix();
+    _0x454ec0.log(_0x232f8a + _0x322169, _0x1bb66a);
   }
-  async queryPointTaskAndSignFromES(_0x4e67ea = {}) {
+  async request(_0x5adfb9) {
+    const _0x847a9a = ["RequestError"],
+      _0x576188 = ["TimeoutError"];
+    let _0x54fbe8 = _0x454ec0.copy(_0x5adfb9),
+      _0x5892e3 = {};
     try {
-      const _0x3ea330 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~integralTaskStrategyService~queryPointTaskAndSignFromES",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          deviceId: this.deviceId,
-          channelType: String(_0x4e67ea.channelType || 1)
+      let _0x41dc1e = null,
+        _0x487db1 = 0,
+        _0x5ae7cb = _0x54fbe8.fn || _0x54fbe8.url,
+        _0x5c1049 = _0x54fbe8.valid_code || [200];
+      if (_0x54fbe8.form) {
+        for (let _0x2699e9 in _0x54fbe8.form) {
+          typeof _0x54fbe8.form[_0x2699e9] == "object" && (_0x54fbe8.form[_0x2699e9] = JSON.stringify(_0x54fbe8.form[_0x2699e9]));
         }
-      };
-      let _0x1cdfaa = await this.fetch(_0x3ea330);
-      if (!_0x1cdfaa?.["success"]) {
-        throw new Error("[" + (this.userName || this.index) + "][ERROR] 查询任务失败: " + (_0x1cdfaa.errorMessage || JSON.stringify(_0x1cdfaa) || "无返回"));
       }
-      for (const _0x25b1a3 of _0x1cdfaa.obj.taskTitleLevels) {
-        switch (_0x25b1a3.status) {
-          case 2:
-            if ($.unTaskList.includes(_0x25b1a3.title)) {
+      _0x54fbe8.method = _0x54fbe8?.["method"]?.["toUpperCase"]() || "GET";
+      if (_0x54fbe8.searchParams) {
+        for (let _0x5d7789 in _0x54fbe8.searchParams) {
+          typeof _0x54fbe8.searchParams[_0x5d7789] == "object" && (_0x54fbe8.searchParams[_0x5d7789] = JSON.stringify(_0x54fbe8.searchParams[_0x5d7789]));
+        }
+      }
+      let _0x1acf6b = _0x54fbe8.got_client || this.got;
+      _0x54fbe8.debug_in && console.log(_0x54fbe8);
+      while (_0x487db1 < _0x2ca80d) {
+        if (_0x487db1 > 0) {
+          await _0x454ec0.wait(_0x3bd5e2 * _0x487db1);
+          let _0x2d61dc = _0x454ec0.get(_0x54fbe8, "retryer", null);
+          if (_0x2d61dc) {
+            let _0x4cacdd = _0x454ec0.get(_0x54fbe8, "retryer_opt", {});
+            await _0x2d61dc(_0x54fbe8, _0x4cacdd);
+          }
+        }
+        _0x487db1++;
+        let _0x1f5fee = null;
+        try {
+          let _0x26051d = Number(_0x54fbe8?.["timeout"]?.["request"] || _0x54fbe8?.["timeout"] || _0x5a1d0b),
+            _0x4b6e22 = false,
+            _0x2ba956 = Date.now(),
+            _0x438927 = _0x1acf6b(_0x54fbe8),
+            _0x329f0b = setTimeout(() => {
+              _0x4b6e22 = true;
+              _0x438927.cancel();
+            }, _0x26051d);
+          await _0x438927.then(_0x32218e => {
+            _0x41dc1e = _0x32218e;
+          }, _0xb670ca => {
+            _0x1f5fee = _0xb670ca;
+            _0x41dc1e = _0xb670ca.response;
+          }).finally(() => clearTimeout(_0x329f0b));
+          let _0x2e4856 = Date.now(),
+            _0x151e7e = _0x2e4856 - _0x2ba956,
+            _0x2c8400 = _0x41dc1e?.["statusCode"] || null;
+          if (_0x4b6e22 || _0x576188.includes(_0x1f5fee?.["name"])) {
+            let _0x10f960 = "";
+            _0x1f5fee?.["code"] && (_0x10f960 += "(" + _0x1f5fee.code, _0x1f5fee?.["event"] && (_0x10f960 += ":" + _0x1f5fee.event), _0x10f960 += ")");
+            this.log("[" + _0x5ae7cb + "]请求超时" + _0x10f960 + "(" + _0x151e7e + "ms)，重试第" + _0x487db1 + "次");
+          } else {
+            if (_0x847a9a.includes(_0x1f5fee?.["name"])) {
+              this.log("[" + _0x5ae7cb + "]请求错误(" + _0x1f5fee.code + ")(" + _0x151e7e + "ms)，重试第" + _0x487db1 + "次");
+            } else {
+              if (_0x2c8400) {
+                _0x1f5fee && !_0x5c1049.includes(_0x2c8400) && this.log("请求[" + _0x5ae7cb + "]返回[" + _0x2c8400 + "]");
+              } else {
+                let {
+                  code = "unknown",
+                  name = "unknown"
+                } = _0x1f5fee || {};
+                this.log("请求[" + _0x5ae7cb + "]错误[" + code + "][" + name + "]");
+              }
               break;
             }
-            await this.finishTask(_0x25b1a3);
-          case 1:
-            await this.fetchIntegral(_0x25b1a3);
-            break;
-          case 3:
-            break;
-          default:
-            $.log("[" + (this.userName || this.index) + "][ERROR] 任务[" + _0x25b1a3.title + "] -- 未知状态[" + _0x25b1a3.status + "]");
-            break;
-        }
-      }
-    } catch (_0x489823) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x489823 + "\n");
-    }
-  }
-  async finishTask(_0x313223) {
-    try {
-      const _0x55dbf4 = {
-        taskCode: _0x313223.taskCode
-      };
-      const _0x81a16b = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonRoutePost/memberEs/taskRecord/finishTask",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x55dbf4
-      };
-      let _0x49f1ac = await this.fetch(_0x81a16b);
-      if (!_0x49f1ac.success) {
-        throw new Error("完成任务[" + _0x313223.title + "]失败: " + (_0x49f1ac.errorMessage || JSON.stringify(_0x49f1ac) || "无返回"));
-      }
-      $.log("[" + (this.userName || this.index) + "][INFO] 完成任务[" + _0x313223.title + "]成功");
-    } catch (_0x4d36af) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x4d36af + "\n");
-    }
-  }
-  async fetchIntegral(_0xa141e) {
-    try {
-      const _0x42d9ee = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~integralTaskStrategyService~fetchIntegral",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          strategyId: _0xa141e.strategyId,
-          taskId: _0xa141e.taskId,
-          taskCode: _0xa141e.taskCode,
-          deviceId: this.deviceId
-        }
-      };
-      let _0x58f8cf = await this.fetch(_0x42d9ee);
-      if (!_0x58f8cf.success) {
-        throw new Error("领取任务[" + _0xa141e.title + "]奖励失败: " + (_0x58f8cf.errorMessage || JSON.stringify(_0x58f8cf) || "无返回"));
-      }
-      $.log("[" + (this.userName || this.index) + "][INFO] 领取任务[" + _0xa141e.title + "]奖励: " + _0x58f8cf.obj.point + "积分");
-    } catch (_0x4a1dd3) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x4a1dd3 + "\n");
-    }
-  }
-  async memberDay_task(_0x318242 = {}) {
-    const _0x1bec08 = new Date().getDate();
-    if (_0x1bec08 >= 26 && _0x1bec08 <= 28) {
-      await this.memberDay_index();
-    }
-  }
-  async memberDay_index() {
-    try {
-      const _0x45c7b7 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~memberDayIndexService~index",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {}
-      };
-      let _0x4a223d = await this.fetch(_0x45c7b7);
-      if (_0x4a223d?.["success"]) {
-        let {
-          lotteryNum = 0
-        } = _0x4a223d.obj || {};
-        await this.memberDay_redPacketReceivedStatus();
-        $.log("[" + (this.userName || this.index) + "][ERROR] 会员日可以抽奖" + lotteryNum + "次");
-        while (lotteryNum-- > 0) {
-          await this.memberDay_lottery();
-        }
-        if (this.memberDay_black) {
-          return;
-        }
-        await this.memberDay_taskList();
-        if (this.memberDay_black) {
-          return;
-        }
-        await this.memberDay_redPacketStatus();
-      } else {
-        const _0x3e3473 = _0x4a223d?.["errorMessage"] || (_0x4a223d ? JSON.stringify(_0x4a223d) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 查询会员日失败: " + _0x3e3473);
-        _0x3e3473?.["includes"]("没有资格参与活动") && (this.memberDay_black = true, $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控"));
-      }
-    } catch (_0x172476) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x172476 + "\n");
-    }
-  }
-  async memberDay_redPacketReceivedStatus() {
-    try {
-      const _0x1d9627 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~memberDayTaskService~redPacketReceivedStatus",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {}
-      };
-      let _0x2a85a2 = await this.fetch(_0x1d9627);
-      if (_0x2a85a2?.["success"]) {
-        for (let _0x331535 of _0x2a85a2?.["obj"] || []) {
-          if (_0x331535.received) {
-            continue;
           }
-          let _0x453e01 = new Date().getHours();
-          if (_0x331535.receiveHour === _0x453e01) {
-            await this.memberDay_receiveRedPacket(_0x331535.receiveHour);
-          }
-        }
-      } else {
-        let _0x3fb90b = _0x2a85a2?.["errorMessage"] || (_0x2a85a2 ? JSON.stringify(_0x2a85a2) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 会员日查询整点领红包失败: " + _0x3fb90b);
-        if (_0x3fb90b.includes("没有资格参与活动")) {
-          this.memberDay_black = true;
-          $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控");
+        } catch (_0x25b471) {
+          this.log("[" + _0x5ae7cb + "]请求错误(" + _0x25b471.message + ")，重试第" + _0x487db1 + "次");
         }
       }
-    } catch (_0x533d54) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x533d54 + "\n");
-    }
-  }
-  async memberDay_receiveRedPacket(_0x5f5635) {
-    try {
-      const _0x233940 = {
-        receiveHour: _0x5f5635
-      };
-      const _0x2e4fb0 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~memberDayTaskService~receiveRedPacket",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x233940
-      };
-      let _0x492f8c = await this.fetch(_0x2e4fb0);
-      if (_0x492f8c?.["success"]) {
-        $.log("[" + (this.userName || this.index) + "][INFO] 会员日领取" + _0x5f5635 + "点红包成功");
-      } else {
-        let _0x212d12 = _0x492f8c?.["errorMessage"] || (_0x492f8c ? JSON.stringify(_0x492f8c) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 会员日领取" + _0x5f5635 + "点红包失败: " + _0x212d12);
-        _0x212d12.includes("没有资格参与活动") && (this.memberDay_black = true, $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控"));
-      }
-    } catch (_0x57d4c2) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x57d4c2 + "\n");
-    }
-  }
-  async memberDay_lottery() {
-    try {
-      const _0x276b2b = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~memberDayLotteryService~lottery",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {}
-      };
-      let _0x47164f = await this.fetch(_0x276b2b);
-      if (_0x47164f?.["success"]) {
-        let {
-          productName = "空气"
-        } = _0x47164f?.["obj"] || {};
-        const _0x3e3f6a = {
-          notify: true
+      if (_0x41dc1e === null || _0x41dc1e === undefined) {
+        const _0x5602c3 = {
+          statusCode: -1,
+          headers: null,
+          result: null
         };
-        $.log("[" + (this.userName || this.index) + "][INFO] 会员日抽奖: " + productName, _0x3e3f6a);
-      } else {
-        let _0x343cd9 = _0x47164f?.["errorMessage"] || (_0x47164f ? JSON.stringify(_0x47164f) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 会员日抽奖失败: " + _0x343cd9);
-        if (_0x343cd9.includes("没有资格参与活动")) {
-          this.memberDay_black = true;
-          $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控");
-        }
+        return _0x5602c3;
       }
-    } catch (_0x32c696) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x32c696 + "\n");
-    }
-  }
-  async memberDay_taskList() {
-    try {
-      const _0xd6977b = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~activityTaskService~taskList",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          activityCode: "MEMBER_DAY",
-          channelType: "MINI_PROGRAM"
-        }
-      };
-      let _0x39c679 = await this.fetch(_0xd6977b);
-      if (_0x39c679?.["success"]) {
-        let _0x402431 = _0x39c679?.["obj"] || [];
-        for (let _0x3852b3 of _0x402431.filter(_0xa5cb50 => _0xa5cb50.status == 1)) {
-          if (this.memberDay_black) {
-            return;
-          }
-          await this.memberDay_fetchMixTaskReward(_0x3852b3);
-        }
-        for (let _0x6139df of _0x402431.filter(_0x46e068 => _0x46e068.status == 2)) {
-          if (this.memberDay_black) {
-            return;
-          }
-          switch (_0x6139df.taskType) {
-            case "SEND_SUCCESS":
-            case "INVITEFRIENDS_PARTAKE_ACTIVITY":
-            case "OPEN_SVIP":
-            case "OPEN_NEW_EXPRESS_CARD":
-            case "OPEN_FAMILY_CARD":
-            case "CHARGE_NEW_EXPRESS_CARD":
-            case "INTEGRAL_EXCHANGE":
-              break;
-            default:
-              for (let _0x3164e7 = 0; _0x3164e7 < _0x6139df.restFinishTime && !this.memberDay_black; _0x3164e7++) {
-                await this.memberDay_finishTask(_0x6139df);
-              }
-              break;
-          }
-        }
-      } else {
-        let _0x521474 = _0x39c679?.["errorMessage"] || (_0x39c679 ? JSON.stringify(_0x39c679) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 查询会员日任务失败: " + _0x521474);
-        if (_0x521474.includes("没有资格参与活动")) {
-          this.memberDay_black = true;
-          $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控");
-        }
-      }
-    } catch (_0x1e5450) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x1e5450 + "\n");
-    }
-  }
-  async memberDay_fetchMixTaskReward(_0x2a9d18) {
-    try {
-      const _0x5bb957 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~activityTaskService~fetchMixTaskReward",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          taskType: _0x2a9d18.taskType,
-          activityCode: "MEMBER_DAY",
-          channelType: "MINI_PROGRAM"
-        }
-      };
-      let _0x4346ca = await this.fetch(_0x5bb957);
-      if (_0x4346ca?.["success"]) {
-        $.log("[" + (this.userName || this.index) + "][INFO] 领取会员日任务[" + _0x2a9d18.taskName + "]奖励成功");
-      } else {
-        let _0x38771c = _0x4346ca?.["errorMessage"] || (_0x4346ca ? JSON.stringify(_0x4346ca) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 领取会员日任务奖励失败: " + _0x38771c);
-        _0x38771c.includes("没有资格参与活动") && (this.memberDay_black = true, $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控"));
-      }
-    } catch (_0x19e963) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x19e963 + "\n");
-    }
-  }
-  async memberDay_finishTask(_0x983421) {
-    try {
-      const _0x854875 = {
-        taskCode: _0x983421.taskCode
-      };
-      const _0xa45251 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberEs~taskRecord~finishTask",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x854875
-      };
-      let _0x233ecc = await this.fetch(_0xa45251);
-      if (_0x233ecc?.["success"]) {
-        $.log("[" + (this.userName || this.index) + "][INFO] 完成会员日任务[" + _0x983421.taskName + "]成功");
-        await this.memberDay_fetchMixTaskReward(_0x983421);
-      } else {
-        let _0x4b08c4 = _0x233ecc?.["errorMessage"] || (_0x233ecc ? JSON.stringify(_0x233ecc) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 完成会员日任务[" + _0x983421.taskName + "]失败: " + _0x4b08c4);
-        _0x4b08c4.includes("没有资格参与活动") && (this.memberDay_black = true, $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控"));
-      }
-    } catch (_0x15a574) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x15a574 + "\n");
-    }
-  }
-  async memberDay_redPacketStatus() {
-    try {
-      const _0x4263e7 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~memberDayPacketService~redPacketStatus",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {}
-      };
-      let _0x3a4d0f = await this.fetch(_0x4263e7);
-      if (_0x3a4d0f?.["success"]) {
-        let {
-          drewToday: _0x439fe3,
-          packetList: _0x3f5438
-        } = _0x3a4d0f?.["obj"];
-        this.memberDay_redPacket_drewToday = _0x439fe3;
-        for (let _0xfac880 of _0x3f5438) {
-          this.memberDay_redPacket_map[_0xfac880.level] = _0xfac880.count;
-        }
-        let _0x44ede7 = 8;
-        for (let _0x4270ee = 1; _0x4270ee < _0x44ede7; _0x4270ee++) {
-          let _0xc1af18 = this.memberDay_redPacket_map[_0x4270ee] || 0;
-          while (_0xc1af18 >= 2) {
-            await this.memberDay_redPacketMerge(_0x4270ee);
-            _0xc1af18 -= 2;
-          }
-        }
-        let _0x229986 = [],
-          _0x14e894 = 0;
-        for (let _0x48a6af in this.memberDay_redPacket_map) {
-          if (!this.memberDay_redPacket_map[_0x48a6af]) {
-            continue;
-          }
-          _0x229986.push("[" + _0x48a6af + "级]X" + this.memberDay_redPacket_map[_0x48a6af]);
-          let _0x8e3fb2 = parseInt(_0x48a6af);
-          if (_0x8e3fb2 < _0x44ede7) {
-            _0x14e894 += 1 << _0x8e3fb2 - 1;
-          }
-        }
-        $.log("[" + (this.userName || this.index) + "][INFO] 会员日合成列表: " + _0x229986.join(", "));
-        if (this.memberDay_redPacket_map[_0x44ede7]) {
-          $.log("[" + (this.userName || this.index) + "][INFO] 会员日已拥有[" + _0x44ede7 + "级]红包X" + this.memberDay_redPacket_map[_0x44ede7]);
-          await this.memberDay_redPacketDraw(_0x44ede7);
-        } else {
-          let _0x779223 = _0x44ede7 - _0x14e894;
-          $.log("[" + (this.userName || this.index) + "][INFO] 会员日距离[" + _0x44ede7 + "级]红包还差: [1级]红包X" + _0x779223);
-        }
-      } else {
-        let _0x384cb6 = _0x3a4d0f?.["errorMessage"] || (_0x3a4d0f ? JSON.stringify(_0x3a4d0f) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 查询会员日合成失败" + _0x384cb6);
-        _0x384cb6.includes("没有资格参与活动") && (this.memberDay_black = true, $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控"));
-      }
-    } catch (_0x57cd99) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x57cd99 + "\n");
-    }
-  }
-  async memberDay_redPacketMerge(_0x426862) {
-    try {
-      const _0x242125 = {
-        level: _0x426862,
-        num: 2
-      };
-      const _0x22a267 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~memberDayPacketService~redPacketMerge",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x242125
-      };
-      let _0x1d382e = await this.fetch(_0x22a267);
-      if (_0x1d382e?.["success"]) {
-        $.log("[" + (this.userName || this.index) + "][INFO] 会员日合成: [" + _0x426862 + "级]红包X2 -> [" + (_0x426862 + 1) + "级]红包");
-        this.memberDay_redPacket_map[_0x426862] -= 2;
-        !this.memberDay_redPacket_map[_0x426862 + 1] && (this.memberDay_redPacket_map[_0x426862 + 1] = 0);
-        this.memberDay_redPacket_map[_0x426862 + 1]++;
-      } else {
-        let _0x32aea5 = _0x1d382e?.["errorMessage"] || (_0x1d382e ? JSON.stringify(_0x1d382e) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 会员日合成两个[" + _0x426862 + "级]红包失败: " + _0x32aea5);
-        if (_0x32aea5.includes("没有资格参与活动")) {
-          this.memberDay_black = true;
-          $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控");
-        }
-      }
-    } catch (_0x1b12db) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x1b12db + "\n");
-    }
-  }
-  async memberDay_redPacketDraw(_0x4f2162) {
-    try {
-      const _0x4adaa5 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~memberDayPacketService~redPacketDraw",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {
-          level: _0x4f2162.toString()
-        }
-      };
-      let _0x5d690f = await this.fetch(_0x4adaa5);
-      if (_0x5d690f?.["success"]) {
-        let _0xf4df4a = _0x5d690f?.["obj"]?.["map"](_0x5be5e8 => _0x5be5e8.couponName) || [];
-        $.log("[" + (this.userName || this.index) + "][INFO] 会员日提取[" + _0x4f2162 + "级]红包: " + (_0xf4df4a.join(", ") || "空气"));
-      } else {
-        let _0x569021 = _0x5d690f?.["errorMessage"] || (_0x5d690f ? JSON.stringify(_0x5d690f) : "无返回");
-        $.log("[" + (this.userName || this.index) + "][ERROR] 会员日提取[" + _0x4f2162 + "级]红包失败: " + _0x569021);
-        _0x569021.includes("没有资格参与活动") && (this.memberDay_black = true, $.log("[" + (this.userName || this.index) + "][ERROR] 会员日任务风控"));
-      }
-    } catch (_0x3845eb) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x3845eb + "\n");
-    }
-  }
-  async bee_indexData() {
-    try {
-      let _0x55aee5 = randomList(this.userIdList.filter(_0x52ef50 => _0x52ef50 !== this.userId));
-      const _0x1a5a1b = {
-        inviteUserId: _0x55aee5
-      };
-      const _0x51c4e1 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~receiveExchangeIndexService~indexData",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x1a5a1b
-      };
-      let _0x9132c0 = await this.fetch(_0x51c4e1);
-      if (_0x9132c0?.["success"]) {
-        let {
-          friendAwards = [],
-          gameNum = 0,
-          usableHoney = 0,
-          capacity = 0
-        } = _0x9132c0?.["obj"];
-        $.beeHoney = usableHoney;
-        friendAwards.length > 0 && $.log("[" + (this.userName || this.index) + "][INFO] 获得奖励: " + friendAwards.map(_0x4814e7 => _0x4814e7.name).join(", "));
-        $.log("[" + (this.userName || this.index) + "][INFO] 可以进行采蜜冒险 " + gameNum + " 次");
-        while (gameNum-- > 0) {
-          await this.bee_gameReport();
-        }
-        await this.bee_taskDetail();
-      } else {
-        $.log("[" + (this.userName || this.index) + "][ERROR] 进入采蜜游戏主页失败: " + (_0x9132c0?.["errorMessage"] || (_0x9132c0 ? JSON.stringify(_0x9132c0) : "无返回")));
-        return;
-      }
-      let _0x38aa5d = await this.fetch(_0x51c4e1);
-      if (_0x38aa5d?.["success"]) {
-        for (let _0x1d4b0b of _0x38aa5d?.["obj"]?.["taskDetail"] || []) {
-          await this.bee_receiveHoney(_0x1d4b0b);
-        }
-      } else {
-        $.log("[" + (this.userName || this.index) + "][ERROR] 获取采蜜任务详情失败: " + (_0x38aa5d?.["errorMessage"] || (_0x38aa5d ? JSON.stringify(_0x38aa5d) : "无返回")));
-        return;
-      }
-      let _0x53af1c = await this.fetch(_0x51c4e1);
-      if (_0x53af1c?.["success"]) {
-        $.log("[" + (this.userName || this.index) + "][INFO] 采蜜游戏丰蜜: " + (_0x53af1c?.["obj"]?.["usableHoney"] || 0));
-        $.beeHoney = _0x53af1c?.["obj"]["usableHoney"] - $.beeHoney;
-      } else {
-        $.log("[" + (this.userName || this.index) + "][ERROR] 获取采蜜游戏丰蜜失败: " + (_0x53af1c?.["errorMessage"] || (_0x53af1c ? JSON.stringify(_0x53af1c) : "无返回")));
-        return;
-      }
-    } catch (_0x5d19c9) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x5d19c9 + "\n");
-    }
-  }
-  async bee_taskDetail() {
-    try {
-      const _0x3e602a = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~receiveExchangeIndexService~taskDetail",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {}
-      };
-      let _0x301612 = await this.fetch(_0x3e602a);
-      if (_0x301612?.["success"]) {
-        for (let _0x2a4e39 of _0x301612.obj.list) {
-          if (!_0x2a4e39.taskCode) {
-            continue;
-          }
-          switch (_0x2a4e39.status) {
-            case 2:
-              if ($.unTaskList.includes(_0x2a4e39.taskType)) {
-                break;
-              }
-              await this.bee_finishTask(_0x2a4e39);
-            case 1:
-            case 3:
-              break;
-            default:
-              $.log("[" + (this.userName || this.index) + "][ERROR] 任务[" + _0x2a4e39.title + "] -- 未知状态[" + _0x2a4e39.status + "]");
-              break;
-          }
-        }
-      } else {
-        $.log("[" + (this.userName || this.index) + "][ERROR] 查询任务失败: " + (_0x301612?.["errorMessage"] || (_0x301612 ? JSON.stringify(_0x301612) : "无返回")));
-      }
-    } catch (_0x475124) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x475124 + "\n");
-    }
-  }
-  async bee_expand() {
-    try {
-      const _0x4b98c7 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~receiveExchangeApiService~expand",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: {}
-      };
-      let _0x1a2be3 = await this.fetch(_0x4b98c7);
-      if (!_0x1a2be3?.["success"]) {
-        throw new Error("采蜜扩容失败: " + (_0x1a2be3?.["errorMessage"] || _0x1a2be3));
-      }
-      $.log("[" + (this.userName || this.index) + "][INFO] " + "采蜜扩容成功");
-    } catch (_0x4322b8) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x4322b8 + "\n");
-    }
-  }
-  async bee_finishTask(_0x5ba214) {
-    try {
-      const _0x31487d = {
-        taskCode: _0x5ba214.taskCode
-      };
-      const _0x581153 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberEs~taskRecord~finishTask",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x31487d
-      };
-      let _0x2f733d = await this.fetch(_0x581153);
-      if (!_0x2f733d?.["success"]) {
-        throw new Error("完成采蜜任务失败: " + (_0x2f733d?.["errorMessage"] || _0x2f733d));
-      }
-      $.log("[" + (this.userName || this.index) + "][INFO] " + "完成采蜜任务[" + _0x5ba214.taskType + "]成功");
-    } catch (_0x4a5b93) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x4a5b93 + "\n");
-    }
-  }
-  async bee_receiveHoney(_0x452797) {
-    try {
-      const _0x4856cc = {
-        taskType: _0x452797.type
-      };
-      const _0x1f2d5c = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~receiveExchangeIndexService~receiveHoney",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x4856cc
-      };
-      let _0x59ecaf = await this.fetch(_0x1f2d5c);
-      if (!_0x59ecaf?.["success"]) {
-        throw new Error("领取[" + _0x452797.type + "]奖励失败: " + ("" + (_0x59ecaf?.["errorMessage"] || _0x59ecaf)));
-      }
-      $.log("[" + (this.userName || this.index) + "][INFO] " + "领取[" + _0x452797.type + "]奖励获得: " + _0x452797.value + "丰蜜");
-    } catch (_0x34837d) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x34837d + "\n");
-    }
-  }
-  async bee_gameReport() {
-    try {
-      let _0x2a083d = 20;
-      const _0x46349f = {
-        gatherHoney: _0x2a083d
-      };
-      const _0x62f9b8 = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/commonPost/~memberNonactivity~receiveExchangeGameService~gameReport",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x46349f
-      };
-      let _0x4dabb1 = await this.fetch(_0x62f9b8);
-      if (!_0x4dabb1?.["success"]) {
-        throw new Error("采蜜冒险失败: " + (_0x4dabb1?.["errorMessage"] || _0x4dabb1));
-      }
-      $.log("[" + (this.userName || this.index) + "][INFO] 采蜜冒险获得" + _0x2a083d + "丰蜜");
-    } catch (_0x3015a9) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x3015a9 + "\n");
-    }
-  }
-  async coupon_list(_0x263942 = 1, _0x2027fe = 100) {
-    try {
-      const _0x1baeb7 = {
-        couponType: "",
-        pageNo: _0x263942,
-        pageSize: _0x2027fe
-      };
-      const _0x23977a = {
-        url: "https://mcs-mimp-web.sf-express.com/mcs-mimp/coupon/available/list",
-        type: "post",
-        headers: {
-          ...this.getSign()
-        },
-        dataType: "json",
-        body: _0x1baeb7
-      };
-      let _0x3824b6 = await this.fetch(_0x23977a);
-      if (!_0x3824b6.success) {
-        throw new Error("查询账号券失败: " + (_0x3824b6.errorMessage || JSON.stringify(_0x3824b6) || "无返回"));
-      }
-      let _0x3dd68e = _0x3824b6?.["obj"] || [],
-        _0x4d7ab6 = _0x3dd68e.filter(_0x34e7f4 => _0x34e7f4.couponType === "1" && _0x34e7f4.pledgeAmt >= 8);
-      _0x4d7ab6.length > 0 && ($.log("[" + (this.userName || this.index) + "][INFO] 大额优惠券:"), $.log(_0x4d7ab6.map(_0x19d03a => "[" + (this.userName || this.index) + "][INFO] " + _0x19d03a.couponName + ", 过期时间: " + _0x19d03a.invalidTm).join("\n")));
-    } catch (_0x315b4a) {
-      this.ckStatus = false;
-      $.log("[" + (this.userName || this.index) + "][ERROR] " + _0x315b4a + "\n");
-    }
-  }
-}
-async function getCookie() {
-  try {
-    if ($request && $request.method === "OPTIONS") {
-      return;
-    }
-    const _0x589f43 = ObjectKeys2LowerCase($response.headers) ?? {};
-    if (!_0x589f43) {
-      throw new Error("错误的运行方式，请切换到cron环境");
-    }
-    let _0x2effa6 = getQueries(_0x589f43.location);
-    $.log($.toStr(_0x2effa6));
-    $.log($.toStr(_0x589f43));
-    const _0x16c667 = {
-        userId: _0x2effa6.userId,
-        token: $request.url,
-        userName: _0x2effa6?.["mobile"]
-      },
-      _0x426ee9 = userCookie.findIndex(_0x5375a2 => _0x5375a2.userId == _0x16c667.userId);
-    userCookie[_0x426ee9] ? userCookie[_0x426ee9] = _0x16c667 : userCookie.push(_0x16c667);
-    $.setjson(userCookie, ckName);
-    $.msg($.name, "🎉账号[" + _0x16c667.userName + "]更新token成功!", "");
-  } catch (_0x3ade75) {
-    throw _0x3ade75;
-  }
-}
-function randomPattern(_0x3c17a7, _0x8d884 = "abcdef0123456789") {
-  return _0x3c17a7.split("").map(_0x4bec48 => {
-    if (_0x4bec48 === "x") {
-      return _0x8d884.charAt(Math.floor(Math.random() * _0x8d884.length));
-    } else {
-      return _0x4bec48 === "X" ? _0x8d884.charAt(Math.floor(Math.random() * _0x8d884.length)).toUpperCase() : _0x4bec48;
-    }
-  }).join("");
-}
-function phone_num(_0x591173) {
-  if (_0x591173.length == 11) {
-    let _0x236732 = _0x591173.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2");
-    return _0x236732;
-  } else {
-    return _0x591173;
-  }
-}
-async function loadCryptoJS() {
-  let _0x506037 = ($.isNode() ? require("crypto-js") : $.getdata("CryptoJS_code")) || "";
-  if ($.isNode()) {
-    return _0x506037;
-  }
-  if (_0x506037 && Object.keys(_0x506037).length) {
-    console.log("[INFO] 缓存中存在CryptoJS代码, 跳过下载\n");
-    eval(_0x506037);
-    return createCryptoJS();
-  }
-  console.log("[INFO] 开始下载CryptoJS代码\n");
-  return new Promise(async _0x4915bc => {
-    $.getScript("https://cdn.jsdelivr.net/gh/Sliverkiss/QuantumultX@main/Utils/CryptoJS.min.js").then(_0x1915b9 => {
-      $.setdata(_0x1915b9, "CryptoJS_code");
-      eval(_0x1915b9);
-      const _0x32addd = createCryptoJS();
-      console.log("[INFO] CryptoJS加载成功, 请继续\n");
-      _0x4915bc(_0x32addd);
-    });
-  });
-}
-function getQueries(_0x34a312) {
-  const [, _0x5a8c5a] = _0x34a312.split("?");
-  return _0x5a8c5a ? _0x5a8c5a.split("&").reduce((_0x38438c, _0x1be0b6) => {
-    const [_0x4568e6, _0x33c983] = _0x1be0b6.split("=");
-    _0x38438c[_0x4568e6] = _0x33c983;
-    return _0x38438c;
-  }, {}) : {};
-}
-function randomList(_0x217c5b) {
-  if (!_0x217c5b.length) {
-    return null;
-  }
-  let _0x464f34 = Math.floor(Math.random() * _0x217c5b.length);
-  return _0x217c5b[_0x464f34];
-}
-function copy(_0x5ce176) {
-  return Object.assign({}, _0x5ce176);
-}
-!(async () => {
-  try {
-    typeof $request != "undefined" ? await getCookie() : ($.CryptoJS = await loadCryptoJS(), await checkEnv(), await main());
-  } catch (_0x52bf35) {
-    throw _0x52bf35;
-  }
-})().catch(_0x376214 => {
-  $.logErr(_0x376214);
-  $.msg($.name, "⛔️ script run error!", _0x376214.message || _0x376214);
-}).finally(async () => {
-  const _0x13f7ef = {
-    ok: 1
-  };
-  $.done(_0x13f7ef);
-});
-async function sendMsg(a, e) {
-  a && ($.isNode() ? await notify.sendNotify($.name, a) : $.msg($.name, $.title || "", a, e));
-}
-function DoubleLog(o) {
-  o && ($.log(`${o}`), $.notifyMsg.push(`${o}`));
-}
-async function checkEnv() {
-  try {
-    if (!userCookie?.length) {
-      throw new Error("no available accounts found");
-    }
-    $.log(`\n[INFO] 检测到 ${userCookie?.length ?? 0} 个账号\n`);
-    $.userList.push(...userCookie.map(o => new UserInfo(o)).filter(Boolean));
-  } catch (o) {
-    throw o;
-  }
-}
-function debug(g, e = "debug") {
-  "true" === $.is_debug && ($.log(`\n-----------${e}------------\n`), $.log("string" == typeof g ? g : $.toStr(g) || `debug error => t=${g}`), $.log(`\n-----------${e}------------\n`));
-}
-function ObjectKeys2LowerCase(obj) {
-  return !obj ? {} : Object.fromEntries(Object.entries(obj).map(([k, v]) => [k.toLowerCase(), v]));
-}
-async function Request(t) {
-  "string" == typeof t && (t = {
-    url: t
-  });
-  try {
-    if (!t?.url) {
-      throw new Error("[URL][ERROR] 缺少 url 参数");
-    }
-    let {
-      url: o,
-      type: e,
-      headers: r = {},
-      body: s,
-      params: a,
-      dataType: n = "form",
-      resultType: u = "data"
-    } = t;
-    const p = e ? e?.toLowerCase() : "body" in t ? "post" : "get",
-      c = o.concat("post" === p ? "?" + $.queryStr(a) : ""),
-      i = t.timeout ? $.isSurge() ? t.timeout / 1000 : t.timeout : 10000;
-    "json" === n && (r["Content-Type"] = "application/json;charset=UTF-8");
-    const y = "string" == typeof s ? s : s && "form" == n ? $.queryStr(s) : $.toStr(s),
-      l = {
-        ...t,
-        ...(t?.opts ? t.opts : {}),
-        url: c,
-        headers: r,
-        ...("post" === p && {
-          body: y
-        }),
-        ...("get" === p && a && {
-          params: a
-        }),
-        timeout: i
-      },
-      m = $.http[p.toLowerCase()](l).then(t => "data" == u ? $.toObj(t.body) || t.body : $.toObj(t) || t).catch(t => $.log(`[${p.toUpperCase()}][ERROR] ${t}\n`));
-    return Promise.race([new Promise((t, o) => setTimeout(() => o("当前请求已超时"), i)), m]);
-  } catch (t) {
-    console.log(`[${p.toUpperCase()}][ERROR] ${t}\n`);
-  }
-}
-function Env(t, e) {
-  class s {
-    constructor(t) {
-      this.env = t;
-    }
-    send(t, e = "GET") {
-      t = "string" == typeof t ? {
-        url: t
-      } : t;
-      let s = this.get;
-      "POST" === e && (s = this.post);
-      const i = new Promise((e, i) => {
-        s.call(this, t, (t, s, o) => {
-          t ? i(t) : e(s);
-        });
-      });
-      return t.timeout ? ((t, e = 1000) => Promise.race([t, new Promise((t, s) => {
-        setTimeout(() => {
-          s(new Error("请求超时"));
-        }, e);
-      })]))(i, t.timeout) : i;
-    }
-    get(t) {
-      return this.send.call(this.env, t);
-    }
-    post(t) {
-      return this.send.call(this.env, t, "POST");
-    }
-  }
-  return new class {
-    constructor(t, e) {
-      this.logLevels = {
-        debug: 0,
-        info: 1,
-        warn: 2,
-        error: 3
-      };
-      this.logLevelPrefixs = {
-        debug: "[DEBUG] ",
-        info: "[INFO] ",
-        warn: "[WARN] ",
-        error: "[ERROR] "
-      };
-      this.logLevel = "info";
-      this.name = t;
-      this.http = new s(this);
-      this.data = null;
-      this.dataFile = "box.dat";
-      this.logs = [];
-      this.isMute = !1;
-      this.isNeedRewrite = !1;
-      this.logSeparator = "\n";
-      this.encoding = "utf-8";
-      this.startTime = new Date().getTime();
-      Object.assign(this, e);
-      this.log("", `🔔${this.name}, 开始!`);
-    }
-    getEnv() {
-      return "undefined" != typeof $environment && $environment["surge-version"] ? "Surge" : "undefined" != typeof $environment && $environment["stash-version"] ? "Stash" : "undefined" != typeof module && module.exports ? "Node.js" : "undefined" != typeof $task ? "Quantumult X" : "undefined" != typeof $loon ? "Loon" : "undefined" != typeof $rocket ? "Shadowrocket" : void 0;
-    }
-    isNode() {
-      return "Node.js" === this.getEnv();
-    }
-    isQuanX() {
-      return "Quantumult X" === this.getEnv();
-    }
-    isSurge() {
-      return "Surge" === this.getEnv();
-    }
-    isLoon() {
-      return "Loon" === this.getEnv();
-    }
-    isShadowrocket() {
-      return "Shadowrocket" === this.getEnv();
-    }
-    isStash() {
-      return "Stash" === this.getEnv();
-    }
-    toObj(t, e = null) {
-      try {
-        return JSON.parse(t);
-      } catch {
-        return e;
-      }
-    }
-    toStr(t, e = null, ...s) {
-      try {
-        return JSON.stringify(t, ...s);
-      } catch {
-        return e;
-      }
-    }
-    getjson(t, e) {
-      let s = e;
-      if (this.getdata(t)) {
+      let {
+          statusCode: _0x73cc5d,
+          headers: _0x15aff2,
+          body: _0x58c221
+        } = _0x41dc1e,
+        _0x39b9b1 = _0x454ec0.get(_0x54fbe8, "decode_json", true);
+      if (_0x58c221 && _0x39b9b1) {
         try {
-          s = JSON.parse(this.getdata(t));
+          _0x58c221 = JSON.parse(_0x58c221);
         } catch {}
       }
-      return s;
+      const _0x47806c = {
+        statusCode: _0x73cc5d,
+        headers: _0x15aff2,
+        result: _0x58c221
+      };
+      _0x5892e3 = _0x47806c;
+      _0x54fbe8.debug_out && console.log(_0x5892e3);
+    } catch (_0x16826f) {
+      console.log(_0x16826f);
+    } finally {
+      return _0x5892e3;
     }
-    setjson(t, e) {
-      try {
-        return this.setdata(JSON.stringify(t), e);
-      } catch {
-        return !1;
-      }
-    }
-    getScript(t) {
-      return new Promise(e => {
-        this.get({
-          url: t
-        }, (t, s, i) => e(i));
-      });
-    }
-    runScript(t, e) {
-      return new Promise(s => {
-        let i = this.getdata("@chavy_boxjs_userCfgs.httpapi");
-        i = i ? i.replace(/\n/g, "").trim() : i;
-        let o = this.getdata("@chavy_boxjs_userCfgs.httpapi_timeout");
-        o = o ? 1 * o : 20;
-        o = e && e.timeout ? e.timeout : o;
-        const [r, a] = i.split("@"),
-          n = {
-            url: `http://${a}/v1/scripting/evaluate`,
-            body: {
-              script_text: t,
-              mock_type: "cron",
-              timeout: o
-            },
-            headers: {
-              "X-Key": r,
-              Accept: "*/*"
-            },
-            policy: "DIRECT",
-            timeout: o
-          };
-        this.post(n, (t, e, i) => s(i));
-      }).catch(t => this.logErr(t));
-    }
-    loaddata() {
-      if (!this.isNode()) {
-        return {};
-      }
-      {
-        this.fs = this.fs ? this.fs : require("fs");
-        this.path = this.path ? this.path : require("path");
-        const t = this.path.resolve(this.dataFile),
-          e = this.path.resolve(process.cwd(), this.dataFile),
-          s = this.fs.existsSync(t),
-          i = !s && this.fs.existsSync(e);
-        if (!s && !i) {
-          return {};
-        }
+  }
+}
+let _0x43afe8 = new _0x55ea0b();
+class _0x35e111 extends _0x55ea0b {
+  constructor(_0x3abc2a) {
+    super();
+    let _0x652d60 = _0x3abc2a.split("#");
+    this.uid = _0x652d60[0];
+    this.refresh_token = _0x652d60[1];
+    this.name = _0x652d60?.[2] || "";
+    this.access_token = "";
+    this.mobile = "";
+    this.nickname = "";
+    this.need_help_team_count = 0;
+    this.helped_team_count = 0;
+    this.need_help_team = true;
+    this.can_join_team = true;
+    this.cookieJar = new _0x3e25a4();
+    const _0x5d2a9d = {
+      "User-Agent": _0x22a328
+    };
+    this.got = this.got.extend({
+      cookieJar: this.cookieJar,
+      headers: _0x5d2a9d
+    });
+  }
+  get_sign() {
+    return _0x454ec0.randomString();
+  }
+  get_common_param() {
+    let _0x450629 = {
+      timestamp: Date.now(),
+      channel: "ios",
+      platform: "ios",
+      v: _0x3814f0,
+      app_version: _0x3814f0,
+      sellerid: "",
+      channelSub: "",
+      jysessionid: "",
+      brand: "iPhone",
+      model: "iPhone15,1",
+      os: "ios",
+      osVersion: "16.1.0",
+      networkType: "WIFI",
+      screen: "420*910",
+      productLine: "YhStore",
+      appType: "h5",
+      cityid: "",
+      deviceid: "",
+      shopid: _0x297eb2,
+      memberid: this.uid,
+      access_token: this.access_token,
+      sign: ""
+    };
+    return _0x450629;
+  }
+  async get_accessToken(_0x44f116 = {}) {
+    let _0xce5fc5 = false;
+    try {
+      let _0x1dc8a1 = {
+          fn: "get_accessToken",
+          method: "post",
+          url: "https://api.yonghuivip.com/web/passport/member/accessToken/775",
+          searchParams: this.get_common_param(),
+          json: {
+            uid: this.uid,
+            refresh_token: this.refresh_token
+          }
+        },
         {
-          const i = s ? t : e;
-          try {
-            return JSON.parse(this.fs.readFileSync(i));
-          } catch (t) {
-            return {};
-          }
-        }
+          result: _0x44fe16,
+          statusCode: _0x4dccc0
+        } = await this.request(_0x1dc8a1),
+        _0x4afae9 = _0x454ec0.get(_0x44fe16, "code", _0x4dccc0);
+      if (_0x4afae9 == 0) {
+        let {
+          refresh_token: _0x1c286b,
+          access_token: _0x2aecb6
+        } = _0x44fe16?.["data"];
+        this.access_token = _0x2aecb6;
+        _0x1c286b != this.refresh_token && (this.refresh_token = _0x1c286b, _0x462bc1());
+        _0xce5fc5 = true;
+        this.valid = true;
+      } else {
+        let _0x4af38c = _0x454ec0.get(_0x44fe16, "message", "");
+        const _0x2beb2d = {
+          notify: true
+        };
+        this.log("登录失败[" + _0x4afae9 + "]: " + _0x4af38c, _0x2beb2d);
       }
+    } catch (_0x3b7716) {
+      console.log(_0x3b7716);
+    } finally {
+      return _0xce5fc5;
     }
-    writedata() {
-      if (this.isNode()) {
-        this.fs = this.fs ? this.fs : require("fs");
-        this.path = this.path ? this.path : require("path");
-        const t = this.path.resolve(this.dataFile),
-          e = this.path.resolve(process.cwd(), this.dataFile),
-          s = this.fs.existsSync(t),
-          i = !s && this.fs.existsSync(e),
-          o = JSON.stringify(this.data);
-        s ? this.fs.writeFileSync(t, o) : i ? this.fs.writeFileSync(e, o) : this.fs.writeFileSync(t, o);
+  }
+  async getinfo(_0x3c37e6 = {}) {
+    try {
+      let _0x27a276 = {
+          fn: "getinfo",
+          method: "get",
+          url: "https://api.yonghuivip.com/api/web/user/member/getinfo/760",
+          searchParams: this.get_common_param()
+        },
+        {
+          result: _0x2f37d0,
+          statusCode: _0x489688
+        } = await this.request(_0x27a276),
+        _0x3d6a0c = _0x454ec0.get(_0x2f37d0, "code", _0x489688);
+      if (_0x3d6a0c == 0) {
+        let {
+          mobile: _0x32f9c8,
+          memberid: _0x4338c0,
+          nickname: _0x4eedef
+        } = _0x2f37d0?.["data"];
+        this.name = this.name || _0x32f9c8;
+        this.memberid = _0x4338c0;
+        this.nickname = _0x4eedef;
+      } else {
+        let _0x3804df = _0x454ec0.get(_0x2f37d0, "message", "");
+        this.log("获取账户信息失败[" + _0x3d6a0c + "]: " + _0x3804df);
       }
+    } catch (_0xed813f) {
+      console.log(_0xed813f);
     }
-    lodash_get(t, e, s) {
-      const i = e.replace(/\[(\d+)\]/g, ".$1").split(".");
-      let o = t;
-      for (const t of i) if (o = Object(o)[t], void 0 === o) {
-        return s;
+  }
+  async signreward_detail(_0x15a6e1 = {}) {
+    try {
+      let _0x139c58 = {
+          fn: "signreward_detail",
+          method: "get",
+          url: "https://api.yonghuivip.com/web/coupon/signreward/detail",
+          searchParams: this.get_common_param()
+        },
+        {
+          result: _0x1d4db0,
+          statusCode: _0x294401
+        } = await this.request(_0x139c58),
+        _0x4b889e = _0x454ec0.get(_0x1d4db0, "code", _0x294401);
+      if (_0x4b889e == 0) {
+        let {
+          signflag: _0x2c224a,
+          missionid: _0x588166
+        } = _0x1d4db0?.["data"];
+        _0x2c224a ? this.log("今天已签到") : await this.signreward_sign(_0x588166);
+      } else {
+        let _0x362e9a = _0x454ec0.get(_0x1d4db0, "message", "");
+        this.log("签到失败[" + _0x4b889e + "]: " + _0x362e9a);
       }
-      return o;
+    } catch (_0x5a2de0) {
+      console.log(_0x5a2de0);
     }
-    lodash_set(t, e, s) {
-      Object(t) !== t || (Array.isArray(e) || (e = e.toString().match(/[^.[\]]+/g) || []), e.slice(0, -1).reduce((t, s, i) => Object(t[s]) === t[s] ? t[s] : t[s] = Math.abs(e[i + 1]) >> 0 == +e[i + 1] ? [] : {}, t)[e[e.length - 1]] = s);
-      return t;
-    }
-    getdata(t) {
-      let e = this.getval(t);
-      if (/^@/.test(t)) {
-        const [, s, i] = /^@(.*?)\.(.*?)$/.exec(t),
-          o = s ? this.getval(s) : "";
-        if (o) {
-          try {
-            const t = JSON.parse(o);
-            e = t ? this.lodash_get(t, i, "") : e;
-          } catch (t) {
-            e = "";
-          }
-        }
-      }
-      return e;
-    }
-    setdata(t, e) {
-      let s = !1;
-      if (/^@/.test(e)) {
-        const [, i, o] = /^@(.*?)\.(.*?)$/.exec(e),
-          r = this.getval(i),
-          a = i ? "null" === r ? null : r || "{}" : "{}";
-        try {
-          const e = JSON.parse(a);
-          this.lodash_set(e, o, t);
-          s = this.setval(JSON.stringify(e), i);
-        } catch (e) {
-          const r = {};
-          this.lodash_set(r, o, t);
-          s = this.setval(JSON.stringify(r), i);
+  }
+  async signreward_sign(_0x8a6836, _0x1673fe = {}) {
+    try {
+      const _0x37d8d8 = {
+        shopId: _0x5b0990,
+        missionid: _0x8a6836
+      };
+      let _0x2ee2d0 = {
+          fn: "signreward_sign",
+          method: "post",
+          url: "https://api.yonghuivip.com/web/coupon/signreward/sign",
+          searchParams: this.get_common_param(),
+          json: _0x37d8d8
+        },
+        {
+          result: _0x4d56c6,
+          statusCode: _0x4dd145
+        } = await this.request(_0x2ee2d0),
+        _0x4ceae8 = _0x454ec0.get(_0x4d56c6, "code", _0x4dd145);
+      if (_0x4ceae8 == 0) {
+        let {
+          credit = 0,
+          couponvos: _0x2c723e
+        } = _0x4d56c6?.["data"]?.["signrewardvo"];
+        this.log("签到成功: " + credit + "积分");
+        if (_0x2c723e && _0x2c723e?.["length"]) {
+          let _0x4bf8b4 = _0x2c723e.map(_0x2922d0 => _0x2922d0.orderminamount / 100 + "减" + _0x2922d0.amount / 100 + "优惠券");
+          this.log("签到获得: " + _0x4bf8b4.join(", "));
         }
       } else {
-        s = this.setval(t, e);
+        let _0x3c6707 = _0x454ec0.get(_0x4d56c6, "message", "");
+        this.log("签到失败[" + _0x4ceae8 + "]: " + _0x3c6707);
       }
-      return s;
+    } catch (_0x2774b4) {
+      console.log(_0x2774b4);
     }
-    getval(t) {
-      switch (this.getEnv()) {
-        case "Surge":
-        case "Loon":
-        case "Stash":
-        case "Shadowrocket":
-          return $persistentStore.read(t);
-        case "Quantumult X":
-          return $prefs.valueForKey(t);
-        case "Node.js":
-          this.data = this.loaddata();
-          return this.data[t];
-        default:
-          return this.data && this.data[t] || null;
-      }
-    }
-    setval(t, e) {
-      switch (this.getEnv()) {
-        case "Surge":
-        case "Loon":
-        case "Stash":
-        case "Shadowrocket":
-          return $persistentStore.write(t, e);
-        case "Quantumult X":
-          return $prefs.setValueForKey(t, e);
-        case "Node.js":
-          this.data = this.loaddata();
-          this.data[e] = t;
-          this.writedata();
-          return !0;
-        default:
-          return this.data && this.data[e] || null;
-      }
-    }
-    initGotEnv(t) {
-      this.got = this.got ? this.got : require("got");
-      this.cktough = this.cktough ? this.cktough : require("tough-cookie");
-      this.ckjar = this.ckjar ? this.ckjar : new this.cktough.CookieJar();
-      t && (t.headers = t.headers ? t.headers : {}, t && (t.headers = t.headers ? t.headers : {}, void 0 === t.headers.cookie && void 0 === t.headers.Cookie && void 0 === t.cookieJar && (t.cookieJar = this.ckjar)));
-    }
-    get(t, e = () => {}) {
-      switch (t.headers && (delete t.headers["Content-Type"], delete t.headers["Content-Length"], delete t.headers["content-type"], delete t.headers["content-length"]), t.params && (t.url += "?" + this.queryStr(t.params)), void 0 === t.followRedirect || t.followRedirect || ((this.isSurge() || this.isLoon()) && (t["auto-redirect"] = !1), this.isQuanX() && (t.opts ? t.opts.redirection = !1 : t.opts = {
-        redirection: !1
-      })), this.getEnv()) {
-        case "Surge":
-        case "Loon":
-        case "Stash":
-        case "Shadowrocket":
-        default:
-          this.isSurge() && this.isNeedRewrite && (t.headers = t.headers || {}, Object.assign(t.headers, {
-            "X-Surge-Skip-Scripting": !1
-          }));
-          $httpClient.get(t, (t, s, i) => {
-            !t && s && (s.body = i, s.statusCode = s.status ? s.status : s.statusCode, s.status = s.statusCode);
-            e(t, s, i);
-          });
-          break;
-        case "Quantumult X":
-          this.isNeedRewrite && (t.opts = t.opts || {}, Object.assign(t.opts, {
-            hints: !1
-          }));
-          $task.fetch(t).then(t => {
-            const {
-              statusCode: s,
-              statusCode: i,
-              headers: o,
-              body: r,
-              bodyBytes: a
-            } = t;
-            e(null, {
-              status: s,
-              statusCode: i,
-              headers: o,
-              body: r,
-              bodyBytes: a
-            }, r, a);
-          }, t => e(t && t.error || "UndefinedError"));
-          break;
-        case "Node.js":
-          let s = require("iconv-lite");
-          this.initGotEnv(t);
-          this.got(t).on("redirect", (t, e) => {
-            try {
-              if (t.headers["set-cookie"]) {
-                const s = t.headers["set-cookie"].map(this.cktough.Cookie.parse).toString();
-                s && this.ckjar.setCookieSync(s, null);
-                e.cookieJar = this.ckjar;
-              }
-            } catch (t) {
-              this.logErr(t);
-            }
-          }).then(t => {
-            const {
-                statusCode: i,
-                statusCode: o,
-                headers: r,
-                rawBody: a
-              } = t,
-              n = s.decode(a, this.encoding);
-            e(null, {
-              status: i,
-              statusCode: o,
-              headers: r,
-              rawBody: a,
-              body: n
-            }, n);
-          }, t => {
-            const {
-              message: i,
-              response: o
-            } = t;
-            e(i, o, o && s.decode(o.rawBody, this.encoding));
-          });
-          break;
-      }
-    }
-    post(t, e = () => {}) {
-      const s = t.method ? t.method.toLocaleLowerCase() : "post";
-      switch (t.body && t.headers && !t.headers["Content-Type"] && !t.headers["content-type"] && (t.headers["content-type"] = "application/x-www-form-urlencoded"), t.headers && (delete t.headers["Content-Length"], delete t.headers["content-length"]), void 0 === t.followRedirect || t.followRedirect || ((this.isSurge() || this.isLoon()) && (t["auto-redirect"] = !1), this.isQuanX() && (t.opts ? t.opts.redirection = !1 : t.opts = {
-        redirection: !1
-      })), this.getEnv()) {
-        case "Surge":
-        case "Loon":
-        case "Stash":
-        case "Shadowrocket":
-        default:
-          this.isSurge() && this.isNeedRewrite && (t.headers = t.headers || {}, Object.assign(t.headers, {
-            "X-Surge-Skip-Scripting": !1
-          }));
-          $httpClient[s](t, (t, s, i) => {
-            !t && s && (s.body = i, s.statusCode = s.status ? s.status : s.statusCode, s.status = s.statusCode);
-            e(t, s, i);
-          });
-          break;
-        case "Quantumult X":
-          t.method = s;
-          this.isNeedRewrite && (t.opts = t.opts || {}, Object.assign(t.opts, {
-            hints: !1
-          }));
-          $task.fetch(t).then(t => {
-            const {
-              statusCode: s,
-              statusCode: i,
-              headers: o,
-              body: r,
-              bodyBytes: a
-            } = t;
-            e(null, {
-              status: s,
-              statusCode: i,
-              headers: o,
-              body: r,
-              bodyBytes: a
-            }, r, a);
-          }, t => e(t && t.error || "UndefinedError"));
-          break;
-        case "Node.js":
-          let i = require("iconv-lite");
-          this.initGotEnv(t);
-          const {
-            url: o,
-            ...r
-          } = t;
-          this.got[s](o, r).then(t => {
-            const {
-                statusCode: s,
-                statusCode: o,
-                headers: r,
-                rawBody: a
-              } = t,
-              n = i.decode(a, this.encoding);
-            e(null, {
-              status: s,
-              statusCode: o,
-              headers: r,
-              rawBody: a,
-              body: n
-            }, n);
-          }, t => {
-            const {
-              message: s,
-              response: o
-            } = t;
-            e(s, o, o && i.decode(o.rawBody, this.encoding));
-          });
-          break;
-      }
-    }
-    time(t, e = null) {
-      const s = e ? new Date(e) : new Date();
-      let i = {
-        "M+": s.getMonth() + 1,
-        "d+": s.getDate(),
-        "H+": s.getHours(),
-        "m+": s.getMinutes(),
-        "s+": s.getSeconds(),
-        "q+": Math.floor((s.getMonth() + 3) / 3),
-        S: s.getMilliseconds()
+  }
+  async teamDetail(_0x629a6d = {}) {
+    try {
+      const _0x29933b = {
+        shopId: _0x5b0990
       };
-      /(y+)/.test(t) && (t = t.replace(RegExp.$1, (s.getFullYear() + "").substr(4 - RegExp.$1.length)));
-      for (let e in i) new RegExp("(" + e + ")").test(t) && (t = t.replace(RegExp.$1, 1 == RegExp.$1.length ? i[e] : ("00" + i[e]).substr(("" + i[e]).length)));
-      return t;
-    }
-    queryStr(t) {
-      let e = "";
-      for (const s in t) {
-        let i = t[s];
-        null != i && "" !== i && ("object" == typeof i && (i = JSON.stringify(i)), e += `${s}=${i}&`);
+      let _0x18a974 = {
+          fn: "teamDetail",
+          method: "post",
+          url: "https://api.yonghuivip.com/web/coupon/credit/dividePoint/teamDetail",
+          searchParams: this.get_common_param(),
+          json: _0x29933b
+        },
+        {
+          result: _0x4a4e26,
+          statusCode: _0x24abbd
+        } = await this.request(_0x18a974),
+        _0x873253 = _0x454ec0.get(_0x4a4e26, "code", _0x24abbd);
+      if (_0x873253 == 0) {
+        let {
+          hasTeam: _0xfa23dd,
+          teamSize: _0x2f9c21,
+          teamStatus: _0x3fb874,
+          teamCode: _0x25a0c0,
+          teamDetailList: _0x278558
+        } = _0x4a4e26?.["data"];
+        _0xfa23dd ? (this.teamCode = _0x25a0c0, this.need_help_team_count = _0x2f9c21, this.helped_team_count = _0x278558.length, this.need_help_team_count > this.helped_team_count ? this.need_help_team = true : this.need_help_team = false) : await this.createTeam();
+        this.log("组队进度: " + this.helped_team_count + "/" + this.need_help_team_count);
+      } else {
+        let _0x4dcf57 = _0x454ec0.get(_0x4a4e26, "message", "");
+        this.log("查询组队信息失败[" + _0x873253 + "]: " + _0x4dcf57);
       }
-      e = e.substring(0, e.length - 1);
-      return e;
+    } catch (_0x30874e) {
+      console.log(_0x30874e);
     }
-    msg(e = t, s = "", i = "", o = {}) {
-      const r = t => {
-        const {
-          $open: e,
-          $copy: s,
-          $media: i,
-          $mediaMime: o
-        } = t;
-        switch (typeof t) {
-          case void 0:
-            return t;
-          case "string":
-            switch (this.getEnv()) {
-              case "Surge":
-              case "Stash":
-              default:
-                return {
-                  url: t
-                };
-              case "Loon":
-              case "Shadowrocket":
-                return t;
-              case "Quantumult X":
-                return {
-                  "open-url": t
-                };
-              case "Node.js":
-                return;
-            }
-          case "object":
-            switch (this.getEnv()) {
-              case "Surge":
-              case "Stash":
-              case "Shadowrocket":
-              default:
-                {
-                  const r = {};
-                  let a = t.openUrl || t.url || t["open-url"] || e;
-                  a && Object.assign(r, {
-                    action: "open-url",
-                    url: a
-                  });
-                  let n = t["update-pasteboard"] || t.updatePasteboard || s;
-                  if (n && Object.assign(r, {
-                    action: "clipboard",
-                    text: n
-                  }), i) {
-                    let t, e, s;
-                    if (i.startsWith("http")) {
-                      t = i;
-                    } else {
-                      if (i.startsWith("data:")) {
-                        const [t] = i.split(";"),
-                          [, o] = i.split(",");
-                        e = o;
-                        s = t.replace("data:", "");
-                      } else {
-                        e = i;
-                        s = (t => {
-                          const e = {
-                            JVBERi0: "application/pdf",
-                            R0lGODdh: "image/gif",
-                            R0lGODlh: "image/gif",
-                            iVBORw0KGgo: "image/png",
-                            "/9j/": "image/jpg"
-                          };
-                          for (var s in e) if (0 === t.indexOf(s)) {
-                            return e[s];
-                          }
-                          return null;
-                        })(i);
-                      }
-                    }
-                    Object.assign(r, {
-                      "media-url": t,
-                      "media-base64": e,
-                      "media-base64-mime": o ?? s
-                    });
-                  }
-                  Object.assign(r, {
-                    "auto-dismiss": t["auto-dismiss"],
-                    sound: t.sound
-                  });
-                  return r;
-                }
-              case "Loon":
-                {
-                  const s = {};
-                  let o = t.openUrl || t.url || t["open-url"] || e;
-                  o && Object.assign(s, {
-                    openUrl: o
-                  });
-                  let r = t.mediaUrl || t["media-url"];
-                  i?.startsWith("http") && (r = i);
-                  r && Object.assign(s, {
-                    mediaUrl: r
-                  });
-                  console.log(JSON.stringify(s));
-                  return s;
-                }
-              case "Quantumult X":
-                {
-                  const o = {};
-                  let r = t["open-url"] || t.url || t.openUrl || e;
-                  r && Object.assign(o, {
-                    "open-url": r
-                  });
-                  let a = t["media-url"] || t.mediaUrl;
-                  i?.startsWith("http") && (a = i);
-                  a && Object.assign(o, {
-                    "media-url": a
-                  });
-                  let n = t["update-pasteboard"] || t.updatePasteboard || s;
-                  n && Object.assign(o, {
-                    "update-pasteboard": n
-                  });
-                  console.log(JSON.stringify(o));
-                  return o;
-                }
-              case "Node.js":
-                return;
-            }
-          default:
-            return;
-        }
+  }
+  async createTeam(_0x1d4ffb = {}) {
+    try {
+      const _0x4e67a5 = {
+        shopId: _0x5b0990
       };
-      if (!this.isMute) {
-        switch (this.getEnv()) {
-          case "Surge":
-          case "Loon":
-          case "Stash":
-          case "Shadowrocket":
-          default:
-            $notification.post(e, s, i, r(o));
-            break;
-          case "Quantumult X":
-            $notify(e, s, i, r(o));
-            break;
-          case "Node.js":
-            break;
+      let _0x52346a = {
+          fn: "createTeam",
+          method: "post",
+          url: "https://api.yonghuivip.com/web/coupon/credit/dividePoint/createTeam",
+          searchParams: this.get_common_param(),
+          json: _0x4e67a5
+        },
+        {
+          result: _0x42f020,
+          statusCode: _0x16f7b6
+        } = await this.request(_0x52346a),
+        _0x3a9825 = _0x454ec0.get(_0x42f020, "code", _0x16f7b6);
+      if (_0x3a9825 == 0) {
+        let {
+          teamSize: _0x10d817,
+          teamStatus: _0x5a4cde,
+          teamCode: _0x4f6b44,
+          teamDetailList: _0x5b800a
+        } = _0x42f020?.["data"];
+        this.teamCode = _0x4f6b44;
+        this.need_help_team_count = _0x10d817;
+        this.helped_team_count = _0x5b800a.length;
+        this.need_help_team_count > this.helped_team_count ? this.need_help_team = true : this.need_help_team = false;
+        this.log("开启组队成功");
+      } else {
+        let _0x4c347a = _0x454ec0.get(_0x42f020, "message", "");
+        this.log("开启组队失败[" + _0x3a9825 + "]: " + _0x4c347a);
+      }
+    } catch (_0x2f938d) {
+      console.log(_0x2f938d);
+    }
+  }
+  async joinTheParty(_0x4fe00d, _0x359bba = {}) {
+    try {
+      let _0x20a96c = _0x4fe00d.name || "账号" + _0x4fe00d.index;
+      const _0x440144 = {
+        teamCode: _0x4fe00d.teamCode,
+        shopId: _0x5b0990
+      };
+      let _0x46d128 = {
+          fn: "joinTheParty",
+          method: "post",
+          url: "https://api.yonghuivip.com/web/coupon/credit/dividePoint/joinTheParty",
+          searchParams: this.get_common_param(),
+          json: _0x440144
+        },
+        {
+          result: _0x131869,
+          statusCode: _0x2aa84d
+        } = await this.request(_0x46d128),
+        _0xbb601a = _0x454ec0.get(_0x131869, "code", _0x2aa84d);
+      if (_0xbb601a == 0) {
+        this.can_join_team = false;
+        this.log("加入[" + _0x20a96c + "]队伍成功");
+        _0x4fe00d.helped_team_count++;
+        _0x4fe00d.helped_team_count >= _0x4fe00d.need_help_team_count && (_0x4fe00d.need_help_team = false, _0x4fe00d.log("组队已完成"));
+      } else {
+        let _0x3095d5 = _0x454ec0.get(_0x131869, "message", "");
+        this.log("加入[" + _0x20a96c + "]队伍失败[" + _0xbb601a + "]: " + _0x3095d5);
+        if (_0x3095d5?.["includes"]("队伍人数已达上限")) {
+          _0x4fe00d.need_help_team = false;
+        } else {
+          _0x3095d5?.["includes"]("组队上限") && (this.can_join_team = false);
         }
       }
-      if (!this.isMuteLog) {
-        let t = ["", "==============📣系统通知📣=============="];
-        t.push(e);
-        s && t.push(s);
-        i && t.push(i);
-        console.log(t.join("\n"));
-        this.logs = this.logs.concat(t);
+    } catch (_0x2cdbce) {
+      console.log(_0x2cdbce);
+    }
+  }
+  async getcreditcouponpageinfo_v2(_0x4d1ee3 = {}) {
+    try {
+      let _0x198a62 = {
+          fn: "getcreditcouponpageinfo_v2",
+          method: "get",
+          url: "https://api.yonghuivip.com/web/coupon/credit/coupon/getcreditcouponpageinfo/v2",
+          searchParams: this.get_common_param()
+        },
+        {
+          result: _0x568e34,
+          statusCode: _0x53a888
+        } = await this.request(_0x198a62),
+        _0x1c5e8c = _0x454ec0.get(_0x568e34, "code", _0x53a888);
+      if (_0x1c5e8c == 0) {
+        this.credit = _0x568e34?.["data"]?.["availableCredit"] || 0;
+        const _0x3e72f8 = {
+          notify: true
+        };
+        this.log("积分: " + this.credit, _0x3e72f8);
+      } else {
+        let _0x34cbbf = _0x454ec0.get(_0x568e34, "message", "");
+        const _0x235642 = {
+          notify: true
+        };
+        this.log("查询积分失败[" + _0x1c5e8c + "]: " + _0x34cbbf, _0x235642);
+      }
+    } catch (_0x4efa9e) {
+      console.log(_0x4efa9e);
+    }
+  }
+  async userTask(_0xc73f9f = {}) {
+    if (!(await this.get_accessToken())) {
+      return;
+    }
+    await this.signreward_detail();
+    await this.teamDetail();
+  }
+}
+function _0x5d5328() {
+  if (_0x408278.existsSync("./" + _0x4031d7)) {
+    const _0x11946c = {
+      flag: "r",
+      encoding: "utf-8"
+    };
+    let _0x1e7f43 = _0x408278.readFileSync("./" + _0x4031d7, _0x11946c);
+    _0x1e7f43 = _0x1e7f43?.["replace"](/\r/g, "")?.["split"]("\n")?.["filter"](_0x53b306 => _0x53b306) || [];
+    for (let _0x448a94 of _0x1e7f43) {
+      _0x454ec0.userList.push(new _0x35e111(_0x448a94));
+    }
+  } else {
+    const _0x1f304a = {
+      flag: "w",
+      encoding: "utf-8"
+    };
+    _0x408278.writeFileSync("./" + _0x4031d7, "", _0x1f304a);
+    _0x454ec0.log("CK文件[" + _0x4031d7 + "]不存在, 默认为你新建一个, 如有需要请填入ck");
+  }
+  _0x454ec0.userCount = _0x454ec0.userList.length;
+  if (!_0x454ec0.userCount) {
+    const _0xb11180 = {
+      notify: true
+    };
+    _0x454ec0.log("未找到变量，请检查文件[" + _0x4031d7 + "]", _0xb11180);
+    return false;
+  }
+  _0x454ec0.log("共找到" + _0x454ec0.userCount + "个账号");
+  return true;
+}
+function _0x462bc1() {
+  let _0x3a0e01 = [];
+  for (let _0x398211 of _0x454ec0.userList) {
+    let _0x37b7d3 = _0x398211.name || _0x398211.mobile || "";
+    _0x3a0e01.push(_0x398211.uid + "#" + _0x398211.refresh_token + "#" + _0x37b7d3);
+  }
+  if (_0x3a0e01.length) {
+    const _0x325451 = {
+      flag: "w",
+      encoding: "utf-8"
+    };
+    _0x408278.writeFileSync("./" + _0x4031d7, _0x3a0e01.join("\n"), _0x325451);
+  }
+}
+!(async () => {
+  if (!(await _0x1976a1())) {
+    return;
+  }
+  if (!_0x5d5328()) {
+    return;
+  }
+  _0x454ec0.log("\n------------------- 任务 -------------------");
+  for (let _0x2c7835 of _0x454ec0.userList) {
+    await _0x2c7835.userTask();
+  }
+  let _0x99ee20 = _0x454ec0.userList.filter(_0x10efa2 => _0x10efa2.valid);
+  _0x454ec0.log("\n------------------- 组队助力 -------------------");
+  for (let _0x115179 of _0x99ee20.filter(_0x3b5ab2 => _0x3b5ab2.need_help_team)) {
+    for (let _0x546299 of _0x99ee20.filter(_0x51a672 => _0x51a672.can_join_team && _0x51a672.index != _0x115179.index)) {
+      if (!_0x115179.need_help_team) {
+        break;
+      }
+      await _0x546299.joinTheParty(_0x115179);
+    }
+  }
+  _0x454ec0.log("\n------------------- 查询积分 -------------------");
+  for (let _0x22a19d of _0x99ee20) {
+    await _0x22a19d.getcreditcouponpageinfo_v2();
+  }
+})().catch(_0x2cd514 => _0x454ec0.log(_0x2cd514)).finally(() => _0x454ec0.exitNow());
+async function _0x1976a1(_0x4d12f6 = 0) {
+  let _0x129863 = false;
+  try {
+    let _0x3cb372 = {
+        fn: "auth",
+        method: "get",
+        url: _0x13f210,
+        timeout: 20000
+      },
+      {
+        statusCode: _0x4edbd5,
+        result: _0x10312b
+      } = await _0x43afe8.request(_0x3cb372);
+    if (_0x4edbd5 != 200) {
+      _0x4d12f6++ < _0x3989bb && (_0x129863 = await _0x1976a1(_0x4d12f6));
+      return _0x129863;
+    }
+    if (_0x10312b?.["code"] == 0) {
+      _0x10312b = JSON.parse(_0x10312b.data.file.data);
+      if (_0x10312b?.["commonNotify"] && _0x10312b.commonNotify.length > 0) {
+        const _0x10553b = {
+          notify: true
+        };
+        _0x454ec0.log(_0x10312b.commonNotify.join("\n") + "\n", _0x10553b);
+      }
+      _0x10312b?.["commonMsg"] && _0x10312b.commonMsg.length > 0 && _0x454ec0.log(_0x10312b.commonMsg.join("\n") + "\n");
+      if (_0x10312b[_0x3a423f]) {
+        let _0x3240cc = _0x10312b[_0x3a423f];
+        _0x3240cc.status == 0 ? _0x14be7e >= _0x3240cc.version ? (_0x129863 = true, _0x454ec0.log(_0x3240cc.msg[_0x3240cc.status]), _0x454ec0.log(_0x3240cc.updateMsg), _0x454ec0.log("现在运行的脚本版本是：" + _0x14be7e + "，最新脚本版本：" + _0x3240cc.latestVersion)) : _0x454ec0.log(_0x3240cc.versionMsg) : _0x454ec0.log(_0x3240cc.msg[_0x3240cc.status]);
+      } else {
+        _0x454ec0.log(_0x10312b.errorMsg);
+      }
+    } else {
+      _0x4d12f6++ < _0x3989bb && (_0x129863 = await _0x1976a1(_0x4d12f6));
+    }
+  } catch (_0x14af46) {
+    _0x454ec0.log(_0x14af46);
+  } finally {
+    return _0x129863;
+  }
+}
+function _0x427c74(_0xb7969a) {
+  return new class {
+    constructor(_0x1b26b1) {
+      this.name = _0x1b26b1;
+      this.startTime = Date.now();
+      const _0x57824c = {
+        time: true
+      };
+      this.log("[" + this.name + "]开始运行\n", _0x57824c);
+      this.notifyStr = [];
+      this.notifyFlag = true;
+      this.userIdx = 0;
+      this.userList = [];
+      this.userCount = 0;
+      this.default_timestamp_len = 13;
+      this.default_wait_interval = 1000;
+      this.default_wait_limit = 3600000;
+      this.default_wait_ahead = 0;
+    }
+    log(_0x2e1db9, _0x3087f3 = {}) {
+      let _0x53bae5 = {
+        console: true
+      };
+      Object.assign(_0x53bae5, _0x3087f3);
+      if (_0x53bae5.time) {
+        let _0x11376f = _0x53bae5.fmt || "hh:mm:ss";
+        _0x2e1db9 = "[" + this.time(_0x11376f) + "]" + _0x2e1db9;
+      }
+      if (_0x53bae5.notify) {
+        this.notifyStr.push(_0x2e1db9);
+      }
+      if (_0x53bae5.console) {
+        console.log(_0x2e1db9);
       }
     }
-    debug(...t) {
-      this.logLevels[this.logLevel] <= this.logLevels.debug && (t.length > 0 && (this.logs = [...this.logs, ...t]), console.log(`${this.logLevelPrefixs.debug}${t.map(t => t ?? String(t)).join(this.logSeparator)}`));
+    get(_0x231fbf, _0x109846, _0x528a07 = "") {
+      let _0x8db8d2 = _0x528a07;
+      _0x231fbf?.["hasOwnProperty"](_0x109846) && (_0x8db8d2 = _0x231fbf[_0x109846]);
+      return _0x8db8d2;
     }
-    info(...t) {
-      this.logLevels[this.logLevel] <= this.logLevels.info && (t.length > 0 && (this.logs = [...this.logs, ...t]), console.log(`${this.logLevelPrefixs.info}${t.map(t => t ?? String(t)).join(this.logSeparator)}`));
+    pop(_0x4587e2, _0x27e058, _0x10e405 = "") {
+      let _0x909233 = _0x10e405;
+      _0x4587e2?.["hasOwnProperty"](_0x27e058) && (_0x909233 = _0x4587e2[_0x27e058], delete _0x4587e2[_0x27e058]);
+      return _0x909233;
     }
-    warn(...t) {
-      this.logLevels[this.logLevel] <= this.logLevels.warn && (t.length > 0 && (this.logs = [...this.logs, ...t]), console.log(`${this.logLevelPrefixs.warn}${t.map(t => t ?? String(t)).join(this.logSeparator)}`));
+    copy(_0x25ee1d) {
+      return Object.assign({}, _0x25ee1d);
     }
-    error(...t) {
-      this.logLevels[this.logLevel] <= this.logLevels.error && (t.length > 0 && (this.logs = [...this.logs, ...t]), console.log(`${this.logLevelPrefixs.error}${t.map(t => t ?? String(t)).join(this.logSeparator)}`));
+    read_env(_0xfeac9a) {
+      let _0x140825 = ckNames.map(_0x5c5257 => process.env[_0x5c5257]);
+      for (let _0x2562d8 of _0x140825.filter(_0x136531 => !!_0x136531)) {
+        for (let _0x1d07da of _0x2562d8.split(envSplitor).filter(_0xc11955 => !!_0xc11955)) {
+          this.userList.push(new _0xfeac9a(_0x1d07da));
+        }
+      }
+      this.userCount = this.userList.length;
+      if (!this.userCount) {
+        const _0x5e3f06 = {
+          notify: true
+        };
+        this.log("未找到变量，请检查变量" + ckNames.map(_0x743ea9 => "[" + _0x743ea9 + "]").join("或"), _0x5e3f06);
+        return false;
+      }
+      this.log("共找到" + this.userCount + "个账号");
+      return true;
     }
-    log(...t) {
-      t.length > 0 && (this.logs = [...this.logs, ...t]);
-      console.log(t.map(t => t ?? String(t)).join(this.logSeparator));
+    time(_0x4e1333, _0x2ad27f = null) {
+      let _0x2c3121 = _0x2ad27f ? new Date(_0x2ad27f) : new Date(),
+        _0x45d059 = {
+          "M+": _0x2c3121.getMonth() + 1,
+          "d+": _0x2c3121.getDate(),
+          "h+": _0x2c3121.getHours(),
+          "m+": _0x2c3121.getMinutes(),
+          "s+": _0x2c3121.getSeconds(),
+          "q+": Math.floor((_0x2c3121.getMonth() + 3) / 3),
+          S: this.padStr(_0x2c3121.getMilliseconds(), 3)
+        };
+      /(y+)/.test(_0x4e1333) && (_0x4e1333 = _0x4e1333.replace(RegExp.$1, (_0x2c3121.getFullYear() + "").substr(4 - RegExp.$1.length)));
+      for (let _0x420378 in _0x45d059) new RegExp("(" + _0x420378 + ")").test(_0x4e1333) && (_0x4e1333 = _0x4e1333.replace(RegExp.$1, 1 == RegExp.$1.length ? _0x45d059[_0x420378] : ("00" + _0x45d059[_0x420378]).substr(("" + _0x45d059[_0x420378]).length)));
+      return _0x4e1333;
     }
-    logErr(t, e) {
-      switch (this.getEnv()) {
-        case "Surge":
-        case "Loon":
-        case "Stash":
-        case "Shadowrocket":
-        case "Quantumult X":
-        default:
-          this.log("", `❗️${this.name}, 错误!`, e, t);
-          break;
-        case "Node.js":
-          this.log("", `❗️${this.name}, 错误!`, e, void 0 !== t.message ? t.message : t, t.stack);
-          break;
+    async showmsg() {
+      if (!this.notifyFlag) {
+        return;
+      }
+      if (!this.notifyStr.length) {
+        return;
+      }
+      try {
+        var _0x23b8d2 = require("./sendNotify");
+        this.log("\n============== 推送 ==============");
+        await _0x23b8d2.sendNotify(this.name, this.notifyStr.join("\n"));
+      } catch {
+        this.log("\n=================================");
+        this.log("读取推送依赖[sendNotify.js]失败, 请检查同目录下是否有依赖");
       }
     }
-    wait(t) {
-      return new Promise(e => setTimeout(e, t));
+    padStr(_0x207b14, _0x4c5df8, _0x2a0033 = {}) {
+      let _0x1e40df = _0x2a0033.padding || "0",
+        _0xc9ab61 = _0x2a0033.mode || "l",
+        _0x125900 = String(_0x207b14),
+        _0x3e10d8 = _0x4c5df8 > _0x125900.length ? _0x4c5df8 - _0x125900.length : 0,
+        _0x38482b = "";
+      for (let _0x397370 = 0; _0x397370 < _0x3e10d8; _0x397370++) {
+        _0x38482b += _0x1e40df;
+      }
+      _0xc9ab61 == "r" ? _0x125900 = _0x125900 + _0x38482b : _0x125900 = _0x38482b + _0x125900;
+      return _0x125900;
     }
-    done(t = {}) {
-      const e = (new Date().getTime() - this.startTime) / 1000;
-      switch (this.log("", `🔔${this.name}, 结束! 🕛 ${e} 秒`), this.log(), this.getEnv()) {
-        case "Surge":
-        case "Loon":
-        case "Stash":
-        case "Shadowrocket":
-        case "Quantumult X":
-        default:
-          $done(t);
-          break;
-        case "Node.js":
-          process.exit(1);
+    json2str(_0x3cc57f, _0x2bd0ec, _0x59a36d = false) {
+      let _0x4f6c1c = [];
+      for (let _0x43827d of Object.keys(_0x3cc57f).sort()) {
+        let _0x1a57cb = _0x3cc57f[_0x43827d];
+        if (_0x1a57cb && _0x59a36d) {
+          _0x1a57cb = encodeURIComponent(_0x1a57cb);
+        }
+        _0x4f6c1c.push(_0x43827d + "=" + _0x1a57cb);
+      }
+      return _0x4f6c1c.join(_0x2bd0ec);
+    }
+    str2json(_0x5dd8a9, _0x4dfef0 = false) {
+      let _0x49e746 = {};
+      for (let _0x259052 of _0x5dd8a9.split("&")) {
+        if (!_0x259052) {
+          continue;
+        }
+        let _0x30854f = _0x259052.indexOf("=");
+        if (_0x30854f == -1) {
+          continue;
+        }
+        let _0x51b33b = _0x259052.substr(0, _0x30854f),
+          _0x2201f0 = _0x259052.substr(_0x30854f + 1);
+        if (_0x4dfef0) {
+          _0x2201f0 = decodeURIComponent(_0x2201f0);
+        }
+        _0x49e746[_0x51b33b] = _0x2201f0;
+      }
+      return _0x49e746;
+    }
+    randomPattern(_0x56a7a2, _0x1e86b1 = "abcdef0123456789") {
+      let _0x13cad6 = "";
+      for (let _0x32c259 of _0x56a7a2) {
+        if (_0x32c259 == "x") {
+          _0x13cad6 += _0x1e86b1.charAt(Math.floor(Math.random() * _0x1e86b1.length));
+        } else {
+          _0x32c259 == "X" ? _0x13cad6 += _0x1e86b1.charAt(Math.floor(Math.random() * _0x1e86b1.length)).toUpperCase() : _0x13cad6 += _0x32c259;
+        }
+      }
+      return _0x13cad6;
+    }
+    randomUuid() {
+      return this.randomPattern("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx");
+    }
+    randomString(_0x98302f = 32, _0x251fc3 = "abcdef0123456789") {
+      let _0x27b7e0 = "";
+      for (let _0x140d01 = 0; _0x140d01 < _0x98302f; _0x140d01++) {
+        _0x27b7e0 += _0x251fc3.charAt(Math.floor(Math.random() * _0x251fc3.length));
+      }
+      return _0x27b7e0;
+    }
+    randomList(_0x3174c0) {
+      let _0x1ca8be = Math.floor(Math.random() * _0x3174c0.length);
+      return _0x3174c0[_0x1ca8be];
+    }
+    wait(_0x5d71f8) {
+      return new Promise(_0x13e2e7 => setTimeout(_0x13e2e7, _0x5d71f8));
+    }
+    async exitNow() {
+      await this.showmsg();
+      let _0x12cc86 = Date.now(),
+        _0x15d519 = (_0x12cc86 - this.startTime) / 1000;
+      this.log("");
+      const _0x5967f7 = {
+        time: true
+      };
+      this.log("[" + this.name + "]运行结束，共运行了" + _0x15d519 + "秒", _0x5967f7);
+      process.exit(0);
+    }
+    normalize_time(_0x33d355, _0x32b915 = {}) {
+      let _0x1740d5 = _0x32b915.len || this.default_timestamp_len;
+      _0x33d355 = _0x33d355.toString();
+      let _0x5a38fe = _0x33d355.length;
+      while (_0x5a38fe < _0x1740d5) {
+        _0x33d355 += "0";
+      }
+      _0x5a38fe > _0x1740d5 && (_0x33d355 = _0x33d355.slice(0, 13));
+      return parseInt(_0x33d355);
+    }
+    async wait_until(_0x509a30, _0x9acf04 = {}) {
+      let _0x15913e = _0x9acf04.logger || this,
+        _0x56db21 = _0x9acf04.interval || this.default_wait_interval,
+        _0x292a98 = _0x9acf04.limit || this.default_wait_limit,
+        _0x48bacf = _0x9acf04.ahead || this.default_wait_ahead;
+      if (typeof _0x509a30 == "string" && _0x509a30.includes(":")) {
+        if (_0x509a30.includes("-")) {
+          _0x509a30 = new Date(_0x509a30).getTime();
+        } else {
+          let _0x970a75 = this.time("yyyy-MM-dd ");
+          _0x509a30 = new Date(_0x970a75 + _0x509a30).getTime();
+        }
+      }
+      let _0x2c9980 = this.normalize_time(_0x509a30) - _0x48bacf,
+        _0x5e7e0d = this.time("hh:mm:ss.S", _0x2c9980),
+        _0xc66caa = Date.now();
+      _0xc66caa > _0x2c9980 && (_0x2c9980 += 86400000);
+      let _0x53be30 = _0x2c9980 - _0xc66caa;
+      if (_0x53be30 > _0x292a98) {
+        const _0x72d8c5 = {
+          time: true
+        };
+        _0x15913e.log("离目标时间[" + _0x5e7e0d + "]大于" + _0x292a98 / 1000 + "秒,不等待", _0x72d8c5);
+      } else {
+        const _0x4bebd1 = {
+          time: true
+        };
+        _0x15913e.log("离目标时间[" + _0x5e7e0d + "]还有" + _0x53be30 / 1000 + "秒,开始等待", _0x4bebd1);
+        while (_0x53be30 > 0) {
+          let _0x412b22 = Math.min(_0x53be30, _0x56db21);
+          await this.wait(_0x412b22);
+          _0xc66caa = Date.now();
+          _0x53be30 = _0x2c9980 - _0xc66caa;
+        }
+        const _0x49822b = {
+          time: true
+        };
+        _0x15913e.log("已完成等待", _0x49822b);
       }
     }
-  }(t, e);
+    async wait_gap_interval(_0x162518, _0x52edcc) {
+      let _0x37b01d = Date.now() - _0x162518;
+      _0x37b01d < _0x52edcc && (await this.wait(_0x52edcc - _0x37b01d));
+    }
+  }(_0xb7969a);
 }
