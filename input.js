@@ -1,5 +1,5 @@
 /*
-永辉生活 v1.01
+永辉生活 v1.01  
 
 登录前开启捉包, 捉登录包响应里面的uid和refreshToken
 或网页登录获取: https://service.leafxxx.win/yonghui/login.html
